@@ -62,8 +62,8 @@ def install_passive_checker():
     # Allow nagios to read OpenVZ user_beancounters. NB for non OpenVZ hosts this is not required
     append('/etc/sudoers', 'nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters', use_sudo=True)
 
-   # Install nagios cronjob
-   sudo('crontab -l nagios > /tmp/nagios.cron')
-   append('*/15 * * * * /etc/nagios/passive-checker/run.sh', '/tmp/nagios.cron', use_sudo=True)
-   sudo('crontab nagios /tmp/nagios.cron')
+    # Install nagios cronjob
+    sudo('crontab -l nagios > /tmp/nagios.cron')
+    append('*/15 * * * * /etc/nagios/passive-checker/run.sh', '/tmp/nagios.cron', use_sudo=True)
+    sudo('crontab nagios /tmp/nagios.cron')
 
