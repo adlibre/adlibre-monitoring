@@ -1,6 +1,5 @@
 #!/bin/bash
 # Andrew Cutler, Adlibre 2009-03-24
-# Backup via Rsnapshot and send Nagios check result
 
 
 ## config
