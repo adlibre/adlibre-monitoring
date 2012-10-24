@@ -47,9 +47,9 @@ def configure_nrpe(hosts):
 
 def deploy_nrpe_config():
     sudo('mkdir -p /etc/nagios/nrpe.d')
-    put('nrpe.d/*', '/etc/nagios/nrpe.d/', use_sudo=True)
+    put('nrpe.d/*', '/etc/nagios/nrpe.d/', use_sudo=True, mirror_local_mode=True)
     sudo('mkdir -p /etc/nagios/plugins')
-    put('plugins/*', '/etc/nagios/plugins/', use_sudo=True)
+    put('plugins/*', '/etc/nagios/plugins/', use_sudo=True, mirror_local_mode=True)
 
 
 def install_passive_checker():
@@ -60,7 +60,7 @@ def install_passive_checker():
     sudo('chmod 660 /etc/nagios/send_nsca.cfg')
 
     sudo('mkdir -p /etc/nagios/passive-checker')
-    put('passive-checker/*', '/etc/nagios/passive-checker/', use_sudo=True)
+    put('passive-checker/*', '/etc/nagios/passive-checker/', use_sudo=True, mirror_local_mode=True)
 
     # Allow nagios to read OpenVZ user_beancounters. NB for non OpenVZ hosts this is not required
     append('/etc/sudoers', 'nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters', use_sudo=True)
