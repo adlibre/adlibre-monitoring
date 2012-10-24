@@ -39,8 +39,10 @@ def install_nrpe():
 
 
 def configure_nrpe(hosts):
+    """ Configure NRPE to accept commands from our monitoring server """
     sudo("sed -i -e 's/^allowed_hosts.*$/allowed_hosts=%s/g' /etc/nagios/nrpe.cfg" % (hosts))
     append('/etc/nagios/nrpe.cfg', 'include_dir=/etc/nagios/nrpe.d/', use_sudo=True)
+    sudo('service nrpe restart')
 
 
 def deploy_nrpe_config():
