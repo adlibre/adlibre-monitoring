@@ -1,11 +1,6 @@
 #!/bin/bash
 
 #
-# $Id: check_userbean_limit 17 2010-10-30 04:41:01Z andrew $
-# $HeadURL: https://svn.adlibre.net/projects/scripts/HEAD/nagios/check_userbean_limit $
-#
-
-#
 # Check User Bean Counters for approaching hardlimit
 #
 # Andrew Cutler 2008-05-24
