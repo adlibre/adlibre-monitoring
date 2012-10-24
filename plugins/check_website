@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Check a website:
+# DNS check of hostname and www.hostname
+# Active check of http://hostname and http:/www.hostname (if not naked)
+#
+# NB. Doesn't handle CNAMES. Must use target domain.
+#
+# Andrew Cutler Adlibre Pty Ltd 2011-09-15
+#
+
+HOST=$1
+
+# Check if naked only
+if [ "$2" == "" ]; then
+    HOSTS="${HOST} www.${HOST}"
+else
+    HOSTS="${HOST}"
+fi
+
+PLUGIN_FINDER="`dirname $0`/plugin_finder";
+
+function showUsage {
+    echo "Usage: check_website <naked-domain-name> <optional-naked-only>"
+}
+
+# check that we have required parameters
+if [ "$HOST" == "" ]; then
+    showUsage
+    exit 3
+fi
+
+# DNS Check
+NS=$(dig NS ${HOST} +short=yes)
+for N in ${NS}; do
+    for H in $HOSTS; do       
+        MSG=$(${PLUGIN_FINDER} check_dns -s ${N} -H ${H})
+        RC=$?
+        if [ $RC != 0 ]; then
+            echo "DNS ${N} for ${H} ${MSG}"
+            exit $RC
+        fi
+        RETMSG=$(echo -e "${RETMSG}\n${MSG}")
+    done
+done
+
+# Active HTTP Check
+for H in $HOSTS; do        
+    MSG=$(${PLUGIN_FINDER} check_http -H ${H})
+    RC=$?
+    if [ $RC != 0 ]; then
+        echo "HTTP ${H} ${MSG}"
+        exit $RC
+    fi
+    RETMSG=$(echo -e "${RETMSG}\n${MSG}")
+done
+
+#echo ${RETMSG}
+echo "DNS & HTTP for ${HOSTS} Checked OK."
+exit 0

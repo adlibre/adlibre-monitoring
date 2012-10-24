@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Host Alert via SMS / Email.
+#
+# Ultra compact alert format in 160 chars!
+#
+# Andrew Cutler 2008-03-04
+#
+
+CONTACTEMAIL=$ICINGA_CONTACTEMAIL
+HOSTSTATE=$ICINGA_HOSTSTATE
+HOSTNAME=$ICINGA_HOSTNAME
+HOSTALIAS=$ICINGA_HOSTALIAS
+HOSTOUTPUT=$ICINGA_HOSTOUTPUT
+TIMEDATE="$ICINGA_TIME $ICINGA_DATE"
+
+echo -e "To: ${CONTACTEMAIL}\r
+Subject: Host ${HOSTSTATE} - ${HOSTNAME}\r
+\r
+${HOSTSTATE:0:8}\r
+${HOSTNAME:0:32}\r
+${HOSTALIAS:0:32}\r
+${HOSTOUTPUT:0:64}\r
+${TIMEDATE:0:20}" | /usr/sbin/sendmail -i -f nagios@`hostname` ${CONTACTEMAIL}

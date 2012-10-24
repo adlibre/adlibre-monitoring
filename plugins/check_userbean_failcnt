@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#
+# $Id: check_userbean_failcnt 17 2010-10-30 04:41:01Z andrew $
+# $HeadURL: https://svn.adlibre.net/projects/scripts/HEAD/nagios/check_userbean_failcnt $
+#
+
+#
+# Check User Bean Counters for Change in Failcount value. 
+#
+# Andrew Cutler 2008-05-24
+#
+# v1.0
+#
+# Install: echo "nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters" >> /etc/sudoers
+#
+
+TMP='/tmp/'
+
+# Intial Return Values
+RETVAL=0;
+RETSTR="";
+
+# Functions
+setMsg() {
+  # append if string not null
+  if [ ! "$1" == "" ]; then
+    RETSTR="${RETSTR} ${1}";
+  fi
+}
+
+setRet() {
+  # go up not down
+  if [ "$1" -gt "$RETVAL" ]; then
+    RETVAL=$1;
+  fi
+}
+
+# Main program start.
+if [ -f "${TMP}bean1" ]; then
+  mv -f ${TMP}bean1 ${TMP}bean2;
+elif [ ! -f "${TMP}bean2" ]; then
+  touch ${TMP}bean2;
+  setMsg 'Unknown. Comparison will be performed on next check.'
+  setRet 3;
+fi
+
+# write out our beans
+# this is where we could remove beans we don't want to monitor
+/usr/bin/sudo /bin/cat /proc/user_beancounters | cut -c 13- | sed -e '1,2d' | egrep -v 'dummy' >  ${TMP}bean1;
+
+# check for change in fail count, only returns warning. Unless unknown.
+while read -r LINE;
+do
+  # line in file where we found our counts.
+  n=$(($n+1)); 
+
+  # previous period
+  RES2=`echo "$LINE" | awk '{ print $1 }'`
+  FAIL2=`echo "$LINE" | awk '{ print $6 }'`
+
+  # lets compare with current period
+  RES1=`sed "${n}!d" ${TMP}bean1 | awk '{ print $1 }'`
+  FAIL1=`sed "${n}!d" ${TMP}bean1 | awk '{ print $6 }'`
+
+  if [ ! "$RES1" == "$RES2" ]; then
+    setMsg "$RES1 not equal $RES2"
+    setRet 3;
+  elif [ "$FAIL1" -gt "$FAIL2" ]; then
+    # critical
+    setMsg "Resource $RES1 failcnt is up `expr $FAIL1 - $FAIL2` since last check."
+    setRet 2;
+  else
+    setRet 0;
+  fi
+done < ${TMP}bean2
+
+# 0 ok
+# 1 warn
+# 2 fail
+# 3 unknown
+
+# Set default message
+if [[ "$RETVAL" == "0" && "$RETSTR" == "" ]]; then
+  RETSTR="Ok. Checked $n beans."
+fi
+
+echo $RETSTR;
+exit $RETVAL;

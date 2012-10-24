@@ -1,0 +1,92 @@
+#!/bin/bash
+
+#
+# $Id: check_userbean_limit 17 2010-10-30 04:41:01Z andrew $
+# $HeadURL: https://svn.adlibre.net/projects/scripts/HEAD/nagios/check_userbean_limit $
+#
+
+#
+# Check User Bean Counters for approaching hardlimit
+#
+# Andrew Cutler 2008-05-24
+#
+# v1.0
+#
+# Install: echo "nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters" >> /etc/sudoers
+#
+
+TMP='/tmp/'
+
+# Intial Return Values
+RETVAL=0;
+RETSTR="";
+
+# Functions
+setMsg() {
+  # append if string not null
+  if [ ! "$1" == "" ]; then
+    RETSTR="${RETSTR} ${1}";
+  fi
+}
+
+setRet() {
+  # go up not down
+  if [ "$1" -gt "$RETVAL" ]; then
+    RETVAL=$1;
+  fi
+}
+
+checkResource() {
+  # check to see if we are currently within limit
+  # $1 = eg 'kmemsize        1958858    2130975   46240153   50864168          0'
+  # resource           held    maxheld    barrier      limit    failcnt
+  RESOURCE=`echo "$1" | awk '{ print $1 }'`
+  HELD=`echo "$1" | awk '{ print $2 }'`
+  #MAXHELD=`echo "$1" | awk '{ print $3 }'`
+  BARRIER=`echo "$1" | awk '{ print $4 }'`
+  LIMIT=`echo "$1" | awk '{ print $5 }'`
+  #FAILCNT=`echo "$1" | awk '{ print $6 }'`
+
+  if [ "$HELD" == "0" ]; then
+    setRet 0;
+  elif [ "$HELD" == "$LIMIT" ]; then
+    setMsg "Resource $RESOURCE is at hard limit $LIMIT."
+    setRet 2;
+  elif [[ "$HELD" -gt "$BARRIER" && "$BARRIER" -ne "0" ]]; then
+    setMsg "Resource $RESOURCE value $HELD > barrier $BARRIER."
+    setRet 1;
+  else
+    setRet 0;
+  fi
+}
+
+# Program Start
+
+# write out our beans
+# this is where we could remove beans we don't want to monitor
+/usr/bin/sudo /bin/cat /proc/user_beancounters | cut -c 13- | sed -e '1,2d' | egrep -v 'dummy' >  ${TMP}bean$$;
+
+# This is where we check resources for violation right now
+while read -r LINE;
+do
+  # line in file where we found our counts.
+  n=$(($n+1)); 
+
+  checkResource "$LINE"
+done < ${TMP}bean$$
+
+# 0 ok
+# 1 warn
+# 2 fail
+# 3 unknown
+
+# clean up
+rm -f ${TMP}bean$$;
+
+# Set default message
+if [[ "$RETVAL" == "0" && "$RETSTR" == "" ]]; then
+  RETSTR="Ok. Checked $n beans."
+fi
+
+echo $RETSTR;
+exit $RETVAL;

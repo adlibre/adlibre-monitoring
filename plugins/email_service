@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Email Service Alert
+#
+# More compact alert format
+#
+# Andrew Cutler 2012-04-01
+#
+
+CONTACTEMAIL=$ICINGA_CONTACTEMAIL
+SERVICESTATE=$ICINGA_SERVICESTATE
+SERVICEDESC=$ICINGA_SERVICEDESC
+HOSTNAME=$ICINGA_HOSTNAME
+SERVICEOUTPUT=$ICINGA_SERVICEOUTPUT
+TIMEDATE="$ICINGA_TIME $ICINGA_DATE"
+
+echo -e "To: ${CONTACTEMAIL}\r
+Subject: Alert ${SERVICESTATE:0:4} - ${SERVICEDESC:0:32} - ${HOSTNAME}\r
+\r
+Service State: ${SERVICESTATE}\r
+Hostname: ${HOSTNAME}\r
+Service Desc: ${SERVICEDESC}\r
+Output: ${SERVICEOUTPUT}\r
+Time: ${TIMEDATE}" | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
