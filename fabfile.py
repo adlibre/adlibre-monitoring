@@ -4,11 +4,9 @@ Adlibre Deployment Script for CentOS / EL 5/6
 All commands should be idempotent
 """
 
-from fabric.api import run, put, sudo, prefix
+from fabric.api import env, run, put, sudo, prefix
 
 from fabric.contrib.files import append, comment, exists, sed
-
-from fabric.utils import error
 
 
 def get_os_major_version():
@@ -18,13 +16,16 @@ def get_os_major_version():
 
 def install_epel():
     version = int(get_os_major_version())
-    if version == 5:
-        sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm')
-    elif version == 6:
-        sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-7.noarch.rpm')
-    else:
-        msg = "version %s unknown" % (version)
-        error(msg)
+    env.warn_only = True
+    if run('rpm -q epel-release').failed:
+        if version == 5:
+            sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm')
+        elif version == 6:
+            sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-7.noarch.rpm')
+        else:
+            from fabric.utils import error
+            msg = "version %s unknown" % (version)
+            error(msg)
 
 
 def install_sudo():
