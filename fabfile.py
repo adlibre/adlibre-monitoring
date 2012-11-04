@@ -66,7 +66,7 @@ def install_passive_checker():
     append('/etc/sudoers', 'nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters', use_sudo=True)
 
     # Install nagios cronjob
-    sudo('crontab -l nagios > /tmp/nagios.cron')
+    sudo('crontab -l -u nagios > /tmp/nagios.cron')
     append('*/15 * * * * /etc/nagios/passive-checker/run.sh', '/tmp/nagios.cron', use_sudo=True)
-    sudo('crontab nagios /tmp/nagios.cron')
+    sudo('crontab -u nagios /tmp/nagios.cron')
 
