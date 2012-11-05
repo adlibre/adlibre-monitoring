@@ -51,20 +51,20 @@ def install_nsca():
     sudo('yum -y -q install nsca-client')
     
 
-def _configure_nrpe(hosts):
+def _configure_nrpe(nrpe_allowed_hosts):
     """ Configure NRPE to accept commands from our monitoring server """
-    sudo("sed -i -e 's/^allowed_hosts.*$/allowed_hosts=%s/g' /etc/nagios/nrpe.cfg" % (hosts))
+    sudo("sed -i -e 's/^allowed_hosts.*$/allowed_hosts=%s/g' /etc/nagios/nrpe.cfg" % (nrpe_allowed_hosts))
     append('/etc/nagios/nrpe.cfg', 'include_dir=/etc/nagios/nrpe.d/', use_sudo=True)
     sudo('service nrpe restart')
 
 
-def deploy_nrpe_config():
+def deploy_nrpe_config(nrpe_allowed_hosts):
     """ Deploy NRPE configuration """
     sudo('mkdir -p /etc/nagios/nrpe.d')
     put('nrpe.d/*', '/etc/nagios/nrpe.d/', use_sudo=True, mirror_local_mode=True)
     sudo('mkdir -p /etc/nagios/plugins')
     put('plugins/*', '/etc/nagios/plugins/', use_sudo=True, mirror_local_mode=True)
-    _configure_nrpe()
+    _configure_nrpe(nrpe_allowed_hosts)
 
 
 def install_passive_checker(openvz=False):
@@ -88,12 +88,12 @@ def install_passive_checker(openvz=False):
     sudo('crontab -u nagios /tmp/nagios.cron && rm -f /tmp/nagios.cron')
 
 
-def all(passive_checker=False, openvz=False):
+def all(nrpe_allowed_hosts, passive_checker=False, openvz=False):
     """ Install all components """
     install_os_requirements()
     install_nrpe()
     install_nsca()
-    deploy_nrpe_config()
+    deploy_nrpe_config(nrpe_allowed_hosts)
     
     if passive_checker:
         install_passive_checker(openvz)
