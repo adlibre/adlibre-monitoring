@@ -9,13 +9,13 @@ from fabric.api import env, run, put, sudo, prefix
 from fabric.contrib.files import append, comment, exists, sed
 
 
-def get_os_major_version():
+def _get_os_major_version():
     """ Helper function to determine OS major version """
     return run("egrep -oe '[0-9]' /etc/redhat-release | head -n1")
 
 
-def install_epel():
-    version = int(get_os_major_version())
+def _install_epel():
+    version = int(_get_os_major_version())
     env.warn_only = True
     if run('rpm -q epel-release').failed:
         if version == 5:
@@ -28,17 +28,30 @@ def install_epel():
             error(msg)
 
 
-def install_sudo():
+def _install_sudo():
+    """ Install sudo """
     run('yum -y -q install sudo')
 
 
+def install_os_requirements():
+    """ Install OS requirements """
+    _install_sudo()
+    _install_epel()
+
+
 def install_nrpe():
+    """ Install NRPE + plugins - active checks """
     sudo('yum -y -q install nrpe')
     sudo('chkconfig nrpe on')
     sudo('yum -y -q install nagios-plugins-load nagios-plugins-disk')
 
 
-def configure_nrpe(hosts):
+def install_nsca():
+    """ Install NSCA Client - passive checks"""
+    sudo('yum -y -q install nsca-client')
+    
+
+def _configure_nrpe(hosts):
     """ Configure NRPE to accept commands from our monitoring server """
     sudo("sed -i -e 's/^allowed_hosts.*$/allowed_hosts=%s/g' /etc/nagios/nrpe.cfg" % (hosts))
     append('/etc/nagios/nrpe.cfg', 'include_dir=/etc/nagios/nrpe.d/', use_sudo=True)
@@ -46,14 +59,17 @@ def configure_nrpe(hosts):
 
 
 def deploy_nrpe_config():
+    """ Deploy NRPE configuration """
     sudo('mkdir -p /etc/nagios/nrpe.d')
     put('nrpe.d/*', '/etc/nagios/nrpe.d/', use_sudo=True, mirror_local_mode=True)
     sudo('mkdir -p /etc/nagios/plugins')
     put('plugins/*', '/etc/nagios/plugins/', use_sudo=True, mirror_local_mode=True)
+    _configure_nrpe()
 
 
-def install_passive_checker():
-    sudo('yum -y -q install nsca-client')
+def install_passive_checker(openvz=False):
+    """ Install Adlibre passive checking scripts & cron"""
+    install_nsca()
 
     # fix perms so nagios user can send alerts from cron
     sudo('chown root:nagios /etc/nagios/send_nsca.cfg')
@@ -62,11 +78,22 @@ def install_passive_checker():
     sudo('mkdir -p /etc/nagios/passive-checker')
     put('passive-checker/*', '/etc/nagios/passive-checker/', use_sudo=True, mirror_local_mode=True)
 
-    # Allow nagios to read OpenVZ user_beancounters. NB for non OpenVZ hosts this is not required
-    append('/etc/sudoers', 'nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters', use_sudo=True)
+    if openvz:
+        # Allow nagios to read OpenVZ user_beancounters. NB for non OpenVZ hosts this is not required
+        append('/etc/sudoers', 'nagios,nrpe ALL=(ALL) NOPASSWD: /bin/cat /proc/user_beancounters', use_sudo=True)
 
     # Install nagios cronjob
     sudo('crontab -l -u nagios > /tmp/nagios.cron')
     append('*/15 * * * * /etc/nagios/passive-checker/run.sh', '/tmp/nagios.cron', use_sudo=True)
-    sudo('crontab -u nagios /tmp/nagios.cron')
+    sudo('crontab -u nagios /tmp/nagios.cron && rm -f /tmp/nagios.cron')
 
+
+def all(passive_checker=False, openvz=False):
+    """ Install all components """
+    install_os_requirements()
+    install_nrpe()
+    install_nsca()
+    deploy_nrpe_config()
+    
+    if passive_checker:
+        install_passive_checker(openvz)
