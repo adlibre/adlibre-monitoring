@@ -21,4 +21,5 @@ Service State: ${SERVICESTATE}\r
 Hostname: ${HOSTNAME}\r
 Service Desc: ${SERVICEDESC}\r
 Output: ${SERVICEOUTPUT}\r
-Time: ${TIMEDATE}" | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
+Time: ${TIMEDATE}\r
+URL: ${SERVICEACTIONURL}" | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
