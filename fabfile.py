@@ -1,5 +1,5 @@
 """
-Adlibre Deployment Script for CentOS / EL 5/6
+Adlibre Deployment Script for CentOS / EL 5/6 / Amazon AMI
 
 All commands should be idempotent
 """
@@ -11,17 +11,22 @@ from fabric.contrib.files import append, comment, exists, sed
 
 def _get_os_major_version():
     """ Helper function to determine OS major version """
-    return run("egrep -oe '[0-9]' /etc/redhat-release | head -n1")
+    if exists("/etc/system-release"):
+        return "Amazon"
+    else:
+        return run("egrep -oe '[0-9]' /etc/redhat-release | head -n1")
 
 
 def _install_epel():
-    version = int(_get_os_major_version())
+    version = _get_os_major_version()
     env.warn_only = True
     if run('rpm -q epel-release').failed:
-        if version == 5:
+        if version == "5":
             sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm')
-        elif version == 6:
+        elif version == "6":
             sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-7.noarch.rpm')
+        elif version == "Amazon":
+            print("Amazon AMI includes EPEL")
         else:
             from fabric.utils import error
             msg = "version %s unknown" % (version)
@@ -30,7 +35,8 @@ def _install_epel():
 
 def _install_sudo():
     """ Install sudo """
-    run('yum -y -q install sudo')
+    if not exists("/usr/bin/sudo"):
+        run('yum -y -q install sudo')
 
 
 def install_os_requirements():
@@ -48,7 +54,7 @@ def install_nrpe():
 
 def install_nsca():
     """ Install NSCA Client - passive checks"""
-    sudo('yum -y -q install nsca-client')
+    sudo('yum -y -q --enablerepo=epel install nsca-client')
     
 
 def _configure_nrpe(nrpe_allowed_hosts):
