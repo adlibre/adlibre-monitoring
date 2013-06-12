@@ -8,19 +8,31 @@
 #
 
 CONTACTEMAIL=$ICINGA_CONTACTEMAIL
-SERVICESTATE=$ICINGA_SERVICESTATE
+SERVICESTATE=`echo $ICINGA_SERVICESTATE | sed 's/.*/\L&/; s/[[:graph:]]*/\u&/g'` # Titlecase
 SERVICEDESC=$ICINGA_SERVICEDESC
 HOSTNAME=$ICINGA_HOSTNAME
 SERVICEOUTPUT=$ICINGA_SERVICEOUTPUT
 TIMEDATE="$ICINGA_TIME $ICINGA_DATE"
-SERVICEACTIONURL=$ICINGA_SERVICEACTIONURL
+NOTIFICATIONTYPE=$ICINGA_NOTIFICATIONTYPE
 
-echo -e "To: ${CONTACTEMAIL}\r
-Subject: Alert ${SERVICESTATE:0:4} - ${SERVICEDESC:0:32} - ${HOSTNAME}\r
-\r
-Service State: ${SERVICESTATE}\r
-Hostname: ${HOSTNAME}\r
-Service Desc: ${SERVICEDESC}\r
-Output: ${SERVICEOUTPUT}\r
-Time: ${TIMEDATE}\r
-URL: ${SERVICEACTIONURL}" | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
+(
+    echo -e "To: ${CONTACTEMAIL}\r"
+if [ "$NOTIFICATIONTYPE" == "ACKNOWLEDGEMENT" ]; then    
+    echo -e "Subject: Ack ${SERVICESTATE:0:8} - ${SERVICEDESC:0:32} - ${HOSTNAME}\r"
+else
+    echo -e "Subject: Alert ${SERVICESTATE:0:8} - ${SERVICEDESC:0:32} - ${HOSTNAME}\r"
+fi
+    echo -e "\r"
+if [ "$NOTIFICATIONTYPE" == "ACKNOWLEDGEMENT" ]; then
+    echo -e "Acknowledged by: ${ICINGA_SERVICEACKAUTHOR}\r"
+    echo -e "Acknowledgement: ${ICINGA_SERVICEACKCOMMENT}\r"
+fi
+    echo -e "Service State: ${SERVICESTATE}\r"
+    echo -e "Hostname: ${HOSTNAME}\r"
+    echo -e "Service Desc: ${SERVICEDESC}\r"
+    echo -e "Output: ${SERVICEOUTPUT}\r"
+    echo -e "Notification Type: ${NOTIFICATIONTYPE}\r"
+    echo -e "Time: ${TIMEDATE}\r"
+) | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
+
+

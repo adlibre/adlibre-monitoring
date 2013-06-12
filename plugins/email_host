@@ -8,19 +8,29 @@
 #
 
 CONTACTEMAIL=$ICINGA_CONTACTEMAIL
-HOSTSTATE=$ICINGA_HOSTSTATE
+HOSTSTATE=`echo $ICINGA_HOSTSTATE | sed 's/.*/\L&/; s/[[:graph:]]*/\u&/g'` # Titlecase
 HOSTNAME=$ICINGA_HOSTNAME
 HOSTALIAS=$ICINGA_HOSTALIAS
 HOSTOUTPUT=$ICINGA_HOSTOUTPUT
 TIMEDATE="$ICINGA_TIME $ICINGA_DATE"
-HOSTACTIONURL=$ICINGA_HOSTACTIONURL
+NOTIFICATIONTYPE=$ICINGA_NOTIFICATIONTYPE
 
-echo -e "To: ${CONTACTEMAIL}\r
-Subject: Alert ${HOSTSTATE:0:4} - ${HOSTNAME}\r
-\r
-Host State: ${HOSTSTATE}\r
-Hostname: ${HOSTNAME}\r
-Host Alias: ${HOSTALIAS}\r
-Output: ${HOSTOUTPUT}\r
-Time: ${TIMEDATE}\r
-URL: ${HOSTACTIONURL}" | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
+(
+    echo -e "To: ${CONTACTEMAIL}\r"
+if [ "$NOTIFICATIONTYPE" == "ACKNOWLEDGEMENT" ]; then    
+    echo -e "Subject: Ack ${HOSTSTATE:0:8} - ${HOSTNAME}\r"
+else
+    echo -e "Subject: Alert ${HOSTSTATE:0:8} - ${HOSTNAME}\r"
+fi
+    echo -e "\r"
+if [ "$NOTIFICATIONTYPE" == "ACKNOWLEDGEMENT" ]; then
+    echo -e "Acknowledged by: ${ICINGA_HOSTACKAUTHOR}\r"
+    echo -e "Acknowledgement: ${ICINGA_HOSTACKCOMMENT}\r"
+fi
+    echo -e "Host State: ${HOSTSTATE}\r"
+    echo -e "Hostname: ${HOSTNAME}\r"
+    echo -e "Host Alias: ${HOSTALIAS}\r"
+    echo -e "Output: ${HOSTOUTPUT}\r"
+    echo -e "Notification Type: ${NOTIFICATIONTYPE}\r"
+    echo -e "Time: ${TIMEDATE}\r"
+) | /usr/sbin/sendmail -i -f icinga@`hostname` ${CONTACTEMAIL}
