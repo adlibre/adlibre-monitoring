@@ -4,19 +4,24 @@
 # Andrew Cutler / Adlibre Pty Ltd
 
 PLUGIN=$1
-CHECK_ARGS=`shift; echo "$@"`
+shift
+
+if [ "$PLUGIN" == "" ]; then
+    echo "Usage: plugin_finder <plugin>"
+    exit 99
+fi
 
 if [ -f "/etc/nagios/plugins/${PLUGIN}" ]; then
-    /etc/nagios/plugins/${PLUGIN} ${CHECK_ARGS}
+    /etc/nagios/plugins/${PLUGIN} "$@"
     exit $?;
 elif [ -f "/usr/lib64/nagios/plugins/${PLUGIN}" ]; then
-    /usr/lib64/nagios/plugins/${PLUGIN} ${CHECK_ARGS}
+    /usr/lib64/nagios/plugins/${PLUGIN} "$@"
     exit $?;
 elif [ -f "/usr/lib/nagios/plugins/${PLUGIN}" ]; then
-    /usr/lib/nagios/plugins/${PLUGIN} ${CHECK_ARGS}
+    /usr/lib/nagios/plugins/${PLUGIN} "$@"
     exit $?;
 elif [ -f "/opt/nagios/libexec/${PLUGIN}" ]; then
-    /opt/nagios/libexec/${PLUGIN} ${CHECK_ARGS}
+    /opt/nagios/libexec/${PLUGIN} "$@"
     exit $?;
 else
     echo "Plugin ${PLUGIN} not found."
