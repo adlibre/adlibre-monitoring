@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Time sync check
+
+# requires ntpdate
+
+# config
+THOLDWARN=${1-5}
+THOLDCRIT=${2-10}
+HOST=${3-ntp.adlibre.net}
+
+# Intial Return Values
+RETVAL=0;
+RETSTR="";
+
+# 0 ok
+# 1 warn
+# 2 fail
+# 3 unknown
+
+# Main
+command -v ntpdate >/dev/null || (echo 'ntpdate not found'; exit 3)
+TS=$(ntpdate -q $HOST | tail -n 1 | awk '{print $10}')
+ABS=${TS#-}
+FLOOR=${ABS/.*}
+TIME=$(expr $FLOOR + 1)
+
+if [ ${TIME} -gt ${THOLDWARN} ] || [ ${TIME} -gt ${THOLDCRIT} ]; then
+    RETSTR="Time out of sync by $TS seconds"
+    if [ ${TIME} -gt ${THOLDCRIT} ]; then
+        RETVAL=2
+    else
+       RETVAL=1
+    fi
+fi
+
+# Set default message
+if [[ "$RETVAL" == "0" && "$RETSTR" == "" ]]; then
+  RETSTR="Time ok. $TS seconds drift"
+fi
+
+echo $RETSTR;
+exit $RETVAL;
