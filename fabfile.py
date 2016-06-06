@@ -24,7 +24,9 @@ def _install_epel():
         if version == "5":
             sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm')
         elif version == "6":
-            sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-7.noarch.rpm')
+            sudo('rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm')
+	elif version == "7":
+            print("EL 7")
         elif version == "Amazon":
             print("Amazon AMI includes EPEL")
         else:
