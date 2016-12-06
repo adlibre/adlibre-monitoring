@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -e 
+
+DEVICE=${1-'/'}
+
+OUTPUT=$(btrfs device stats $D)
+ERRORS=$(cat $OUTPUT | grep -vE ' 0$')
+
+if [ "$ERRORS" == "" ]; then
+  echo "BTRFS Checked OK"
+  exit 0
+else
+  echo "BTRFS Errors: $ERRORS"
+  exit 2
+fi
