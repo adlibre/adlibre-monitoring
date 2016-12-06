@@ -4,7 +4,7 @@ set -e
 
 DEVICE=${1-'/'}
 
-OUTPUT=$(btrfs device stats $DEVICE)
+OUTPUT=$(sudo btrfs device stats $DEVICE)
 ERRORS=$(echo $OUTPUT | grep -vE ' 0$' || true)
 
 if [ "$ERRORS" == "" ]; then
