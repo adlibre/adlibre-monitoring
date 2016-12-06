@@ -4,8 +4,8 @@ set -e
 
 DEVICE=${1-'/'}
 
-OUTPUT=$(btrfs device stats $D)
-ERRORS=$(cat $OUTPUT | grep -vE ' 0$')
+OUTPUT=$(btrfs device stats $DEVICE)
+ERRORS=$(echo $OUTPUT | grep -vE ' 0$')
 
 if [ "$ERRORS" == "" ]; then
   echo "BTRFS Checked OK"
